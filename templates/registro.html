@@ -15,7 +15,7 @@
     <button type="submit">Capturar y entrenar</button>
   </form>
 
-  <progress id="progreso" value="0" max="100" style="width: 640px;"></progress>
+  <progress id="progreso" value="0" max="30" style="width: 640px;"></progress>
 
   <script>
     const video = document.getElementById('video');
@@ -31,40 +31,56 @@
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
 
-      const nombre = document.getElementById('estudiante').value;
+      const nombre = document.getElementById('estudiante').value.trim();
+      if (!nombre) return;
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
       let capturas = 0;
+      let fallos = 0;
       progreso.value = 0;
+      progreso.max = 30; // Solo se necesitan 30 capturas
 
       const capturar = setInterval(async () => {
-        ctx.drawImage(video, 0, 0);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imagenBase64 = canvas.toDataURL('image/jpeg');
 
         try {
-          await fetch('/registrar_frame', {
+          const response = await fetch('/registrar_frame', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre: nombre, imagen: imagenBase64 })
           });
+
+          if (!response.ok) {
+            const error = await response.json();
+            console.warn("Rostro no detectado:", error.message);
+            fallos++;
+            if (fallos >= 10) {
+              clearInterval(capturar);
+              alert("Demasiados intentos fallidos. Intenta nuevamente.");
+            }
+            return;
+          }
+
+          capturas++;
+          progreso.value = capturas;
+
+          if (capturas >= 30) {
+            clearInterval(capturar);
+            await fetch(`/entrenar_modelo/${nombre}`, { method: 'POST' });
+            alert("Captura completa. Modelo entrenado.");
+            window.location.href = '/';  // Redirige a la página principal
+          }
+
         } catch (err) {
           console.error("Error al enviar imagen:", err);
         }
 
-        capturas++;
-        progreso.value = capturas;
-
-        if (capturas >= 100) {
-            clearInterval(capturar);
-            await fetch(`/entrenar_modelo/${nombre}`, { method: 'POST' });
-            alert("Captura completa. Modelo entrenado.");
-            window.location.href = '/';  // Redirige al home
-        }
-
-      }, 100); // 100ms entre capturas (1 cada 0.1 segundos)
+      }, 250); // Espera 250ms entre capturas (más ligero para Render)
     });
   </script>
 </body>

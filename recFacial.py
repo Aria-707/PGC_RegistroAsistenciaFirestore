@@ -342,8 +342,9 @@ def registrar_frame():
     image_cv = cv2.cvtColor(frame_color, cv2.COLOR_BGR2GRAY)
 
     faces = faceClassif.detectMultiScale(image_cv, 1.3, 5)
-    if faces is None or len(faces) == 0:
+    if len(faces) == 0:
         return {'message': 'No se detectó ningún rostro'}, 400
+
 
     personPath = os.path.join(dataPath, nombre)
     os.makedirs(personPath, exist_ok=True)
@@ -382,4 +383,4 @@ def registrar_asistencia(nombre):
 
 if __name__ == '__main__':
     entrenar_modelo()
-    app.run(debug=True)
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

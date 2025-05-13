@@ -1,20 +1,59 @@
 <!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Registrar estudiante</title>
+  <meta charset="UTF-8">
+  <title>Registro de nuevo estudiante</title>
 </head>
 <body>
-    <h1>📝 Registro de nuevo estudiante</h1>
+  <h1>📝 Registro de nuevo estudiante</h1>
+  
+  <video id="video" width="640" height="480" autoplay></video>
+  <br>
+  <form id="registro-form">
+    <label for="estudiante">Nombre:</label>
+    <input type="text" id="estudiante" name="estudiante" required>
+    <button type="submit">Capturar y entrenar</button>
+  </form>
+  <a href="/registro">
+    <button>Registrar nuevo estudiante</button>
+  </a>  
 
-    <!-- Cámara en vivo -->
-    <img src="{{ url_for('video_registro') }}" width="640" height="480">
+  <script>
+    const video = document.getElementById('video');
+    const form = document.getElementById('registro-form');
 
-    <!-- Formulario -->
-    <form action="/registrar" method="post">
-        <label for="estudiante">Nombre:</label>
-        <input type="text" id="estudiante" name="estudiante" required>
-        <button type="submit">Capturar y entrenar</button>
-    </form>
+    // Acceder a la cámara
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      });
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+
+      const imageBase64 = canvas.toDataURL('image/jpeg');
+      const nombre = document.getElementById('estudiante').value;
+
+      try {
+        const res = await fetch('/registrar_frame', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre: nombre, imagen: imageBase64 })
+        });
+
+        const data = await res.json();
+        alert(data.message || "Registro enviado");
+      } catch (err) {
+        console.error(err);
+        alert("Ocurrió un error al registrar");
+      }
+    });
+  </script>
 </body>
 </html>

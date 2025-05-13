@@ -205,8 +205,7 @@ import cv2
 import os
 import numpy as np
 import time
-import requests
-import json
+import re
 import firebase_admin
 from firebase_admin import credentials, firestore
 import base64
@@ -406,4 +405,5 @@ def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
+    entrenar_modelo()
     app.run(debug=True)

@@ -2,25 +2,43 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reconocimiento Facial</title>
+    <title>Reconocimiento Facial (Webcam)</title>
 </head>
 <body>
-    <h1>🎥 Reconocimiento Facial (OpenCV en tiempo real)</h1>
-    
-    <img id="stream" src="/video_feed" width="640" height="480" />
-    <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+    <h1>🎥 Reconocimiento Facial (desde navegador)</h1>
+
+    <!-- Muestra en vivo la cámara -->
+    <video id="video" width="640" height="480" autoplay style="transform: scaleX(-1); display: none;"></video>
+
+    <!-- Imagen con los recuadros (respuesta del backend) -->
+    <img id="resultado" width="640" height="480" />
+
+    <!-- Canvas oculto para capturar los frames -->
+    <canvas id="canvas" width="640" height="480" style="transform: scaleX(-1); display: none;"></canvas>
+
     <a href="/registro">
         <button>Registrar nuevo estudiante</button>
-      </a>  
+    </a>
+
     <script>
-        const streamImg = document.getElementById('stream');
+        const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-    
+        const resultado = document.getElementById('resultado');
+
+        // Acceder a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("No se pudo acceder a la cámara:", err);
+            });
+
         setInterval(() => {
-            ctx.drawImage(streamImg, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             const dataUrl = canvas.toDataURL('image/jpeg');
-    
+
             fetch('/analizar_frame', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -33,7 +51,13 @@
                 } else {
                     console.log('❌ No reconocido');
                 }
-            });
+
+                // Mostrar la imagen procesada con recuadros
+                if (data.imagen) {
+                    resultado.src = data.imagen;
+                }
+            })
+            .catch(err => console.error("Error analizando frame:", err));
         }, 1000);
     </script>
 </body>

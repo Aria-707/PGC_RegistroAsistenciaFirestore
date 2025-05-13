@@ -1,4 +1,4 @@
-<!doctype html>
+<!--<!doctype html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -12,5 +12,57 @@
     <a href="{{ url_for('registro') }}">
         <button>Registrar nuevo estudiante</button>
     </a>
+</body>
+</html>-->
+
+
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reconocimiento Facial Flask</title>
+</head>
+<body>
+    <h1>🎥 Cámara con reconocimiento facial</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    
+    <br><br>
+    <a href="{{ url_for('registro') }}">
+        <button>Registrar nuevo estudiante</button>
+    </a>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Pedir acceso a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(err => {
+            console.error('Error al acceder a la cámara:', err);
+        });
+
+        // Función para capturar frame cada segundo
+        setInterval(() => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg');
+
+            // Enviar imagen al backend
+            fetch('/procesar_frame', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imagen: dataUrl })
+            })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(err => console.error('Error al enviar el frame:', err));
+        }, 1000); // Enviar cada 1 segundo
+    </script>
 </body>
 </html>
